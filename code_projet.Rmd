@@ -53,7 +53,7 @@ library(pROC)
 
 ```{r}
 # Definir le WD
-setwd("C:/Users/maroi/Desktop/Projet R")
+
 ```
 
 ```{r}
@@ -62,7 +62,7 @@ getwd()
 
 ```{r}
 # Chargement des donnees
-data<- read.csv("C:/Users/maroi/Desktop/Projet R/projet.csv")
+data<- read.csv("projet.csv")
 ```
 
 ## Structure des données
@@ -264,6 +264,371 @@ ggplot(data_clean, aes(x = age, y = revenus, color = defaut)) +
     theme_minimal() +
     scale_color_manual(values = c("Non" = "red", "Oui" = "black"))
 ```
+
+
+### Clustering des données
+
+## Préparation et exploration pour le clustering
+```{r}
+# Installation et chargement des packages nécessaires
+if(!require(cluster)) install.packages("cluster")
+if(!require(factoextra)) install.packages("factoextra")
+if(!require(NbClust)) install.packages("NbClust")
+library(cluster)
+library(factoextra)
+library(NbClust)
+
+# Préparation des données pour le clustering
+data_clean$education_num <- as.numeric(data_clean$education)
+
+# Sélection des variables pertinentes pour le clustering
+vars_clustering <- c("age", "education_num", "emploi", "adresse", "revenus", 
+                    "debcred", "debcarte", "autres")
+data_cluster <- data_clean[vars_clustering]
+
+# Standardisation des données
+data_scaled <- scale(data_cluster)
+```
+
+
+## Détermination du nombre optimal de clusters
+```{r}
+# Méthode du coude
+fviz_nbclust(data_scaled, kmeans, method = "wss", k.max = 10) +
+  labs(title = "Méthode du coude pour nombre optimal de clusters")
+
+# Méthode de la silhouette
+fviz_nbclust(data_scaled, kmeans, method = "silhouette", k.max = 10) +
+  labs(title = "Méthode de la silhouette pour nombre optimal de clusters")
+
+# Test statistique de gap
+gap_stat <- clusGap(data_scaled, FUN = kmeans, nstart = 25,
+                    K.max = 10, B = 10, iter.max = 100)
+
+fviz_gap_stat(gap_stat) +
+  labs(title = "Statistique de gap pour nombre optimal de clusters")
+```
+
+
+## Analyse avec K=2 clusters
+```{r}
+# K-means avec 2 clusters
+set.seed(123)
+kmeans_2 <- kmeans(data_scaled, centers = 2, nstart = 25)
+data_clean$cluster_2 <- as.factor(kmeans_2$cluster)
+
+# Caractérisation des clusters
+cluster_profiles_2 <- data_clean %>%
+  group_by(cluster_2) %>%
+  summarise(
+    Taille = n(),
+    Taux_defaut = mean(defaut == "Oui") * 100,
+    Age_moyen = mean(age, na.rm = TRUE),
+    Age_median = median(age, na.rm = TRUE),
+    Revenu_moyen = mean(revenus, na.rm = TRUE),
+    Revenu_median = median(revenus, na.rm = TRUE),
+    Dette_credit_moyenne = mean(debcred, na.rm = TRUE),
+    Dette_carte_moyenne = mean(debcarte, na.rm = TRUE),
+    Autres_dettes_moyenne = mean(autres, na.rm = TRUE),
+    Emploi_moyen = mean(emploi, na.rm = TRUE)
+  )
+
+print("Profils des clusters (K=2):")
+print(cluster_profiles_2)
+
+# Visualisations pour K=2
+# Distribution des défauts
+ggplot(data_clean, aes(x = cluster_2, fill = defaut)) +
+  geom_bar(position = "fill") +
+  scale_y_continuous(labels = scales::percent) +
+  labs(title = "Distribution des défauts par cluster (K=2)",
+       x = "Cluster",
+       y = "Proportion") +
+  theme_minimal()
+
+# Distribution de l'éducation par cluster
+ggplot(data_clean, aes(x = education, fill = cluster_2)) +
+  geom_bar(position = "dodge") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(title = "Distribution de l'éducation par cluster_2")
+
+
+# Boîtes à moustaches des variables numériques
+variables_num <- c("age", "revenus", "debcred", "debcarte", "autres")
+for(var in variables_num) {
+  print(
+    ggplot(data_clean, aes_string(x = "cluster_2", y = var, fill = "cluster_2")) +
+      geom_boxplot() +
+      labs(title = paste("Distribution de", var, "par cluster (K=2)")) +
+      theme_minimal()
+  )
+}
+
+
+# Évaluation statistique pour K=2
+print("Tests statistiques pour K=2:")
+for(var in variables_num) {
+  print(paste("ANOVA pour", var))
+  print(summary(aov(as.formula(paste(var, "~ cluster_2")), data = data_clean)))
+}
+
+# Calcul de la silhouette pour K=2
+sil_2 <- silhouette(kmeans_2$cluster, dist(data_scaled))
+plot(sil_2, main = "Silhouette plot (K=2)")
+print(paste("Silhouette moyenne (K=2):", mean(sil_2[,3])))
+
+```
+
+
+
+## Analyse avec K=3 clusters
+```{r}
+# K-means avec 3 clusters
+set.seed(123)
+kmeans_3 <- kmeans(data_scaled, centers = 3, nstart = 25)
+data_clean$cluster_3 <- as.factor(kmeans_3$cluster)
+
+# Caractérisation des clusters
+cluster_profiles_3 <- data_clean %>%
+  group_by(cluster_3) %>%
+  summarise(
+    Taille = n(),
+    Taux_defaut = mean(defaut == "Oui") * 100,
+    Age_moyen = mean(age, na.rm = TRUE),
+    Age_median = median(age, na.rm = TRUE),
+    Revenu_moyen = mean(revenus, na.rm = TRUE),
+    Revenu_median = median(revenus, na.rm = TRUE),
+    Dette_credit_moyenne = mean(debcred, na.rm = TRUE),
+    Dette_carte_moyenne = mean(debcarte, na.rm = TRUE),
+    Autres_dettes_moyenne = mean(autres, na.rm = TRUE),
+    Emploi_moyen = mean(emploi, na.rm = TRUE)
+  )
+
+print("Profils des clusters (K=3):")
+print(cluster_profiles_3)
+
+# Visualisations pour K=3
+# Distribution des défauts
+ggplot(data_clean, aes(x = cluster_3, fill = defaut)) +
+  geom_bar(position = "fill") +
+  scale_y_continuous(labels = scales::percent) +
+  labs(title = "Distribution des défauts par cluster (K=3)",
+       x = "Cluster",
+       y = "Proportion") +
+  theme_minimal()
+
+# Distribution de l'éducation par cluster
+ggplot(data_clean, aes(x = education, fill = cluster_3)) +
+  geom_bar(position = "dodge") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(title = "Distribution de l'éducation par cluster_3")
+
+
+# Boîtes à moustaches des variables numériques
+for(var in variables_num) {
+  print(
+    ggplot(data_clean, aes_string(x = "cluster_3", y = var, fill = "cluster_3")) +
+      geom_boxplot() +
+      labs(title = paste("Distribution de", var, "par cluster (K=3)")) +
+      theme_minimal()
+  )
+}
+
+# Évaluation statistique pour K=3
+print("Tests statistiques pour K=3:")
+for(var in variables_num) {
+  print(paste("ANOVA pour", var))
+  print(summary(aov(as.formula(paste(var, "~ cluster_3")), data = data_clean)))
+}
+
+# Calcul de la silhouette pour K=3
+sil_3 <- silhouette(kmeans_3$cluster, dist(data_scaled))
+plot(sil_3, main = "Silhouette plot (K=3)")
+print(paste("Silhouette moyenne (K=3):", mean(sil_3[,3])))
+```
+
+
+
+
+## Analyse avec K=5 clusters
+```{r}
+# K-means avec 5 clusters
+set.seed(123)
+kmeans_5 <- kmeans(data_scaled, centers = 5, nstart = 25)
+data_clean$cluster_5 <- as.factor(kmeans_5$cluster)
+
+# Caractérisation des clusters
+cluster_profiles_5 <- data_clean %>%
+  group_by(cluster_5) %>%
+  summarise(
+    Taille = n(),
+    Taux_defaut = mean(defaut == "Oui") * 100,
+    Age_moyen = mean(age, na.rm = TRUE),
+    Age_median = median(age, na.rm = TRUE),
+    Revenu_moyen = mean(revenus, na.rm = TRUE),
+    Revenu_median = median(revenus, na.rm = TRUE),
+    Dette_credit_moyenne = mean(debcred, na.rm = TRUE),
+    Dette_carte_moyenne = mean(debcarte, na.rm = TRUE),
+    Autres_dettes_moyenne = mean(autres, na.rm = TRUE),
+    Emploi_moyen = mean(emploi, na.rm = TRUE)
+  )
+
+print("Profils des clusters (K=5):")
+print(cluster_profiles_5)
+
+# Visualisations pour K=5
+# Distribution des défauts
+ggplot(data_clean, aes(x = cluster_5, fill = defaut)) +
+  geom_bar(position = "fill") +
+  scale_y_continuous(labels = scales::percent) +
+  labs(title = "Distribution des défauts par cluster (K=5)",
+       x = "Cluster",
+       y = "Proportion") +
+  theme_minimal()
+
+# Distribution de l'éducation par cluster
+ggplot(data_clean, aes(x = education, fill = cluster_5)) +
+  geom_bar(position = "dodge") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(title = "Distribution de l'éducation par cluster_5")
+
+
+# Boîtes à moustaches des variables numériques
+for(var in variables_num) {
+  print(
+    ggplot(data_clean, aes_string(x = "cluster_5", y = var, fill = "cluster_5")) +
+      geom_boxplot() +
+      labs(title = paste("Distribution de", var, "par cluster (K=5)")) +
+      theme_minimal()
+  )
+}
+
+# Évaluation statistique pour K=5
+print("Tests statistiques pour K=5:")
+for(var in variables_num) {
+  print(paste("ANOVA pour", var))
+  print(summary(aov(as.formula(paste(var, "~ cluster_5")), data = data_clean)))
+}
+
+# Calcul de la silhouette pour K=5
+sil_5 <- silhouette(kmeans_5$cluster, dist(data_scaled))
+plot(sil_5, main = "Silhouette plot (K=5)")
+print(paste("Silhouette moyenne (K=5):", mean(sil_5[,3])))
+```
+
+## Évaluation statistique des différences entre clusters
+
+```{r}
+# Tests de Kruskal-Wallis pour toutes les variables numériques
+variables_test <- c("age", "revenus", "debcred", "debcarte", "autres", "emploi")
+
+# Fonction pour faire tous les tests statistiques
+run_statistical_tests <- function(data, cluster_var) {
+  results <- list()
+  
+  # Tests Kruskal-Wallis
+  for(var in variables_test) {
+    formula <- as.formula(paste(var, "~", cluster_var))
+    test_result <- kruskal.test(formula, data = data)
+    results[[paste("kruskal", var)]] <- test_result
+  }
+  
+  # Test Chi-carré pour variables catégorielles
+  chi_education <- chisq.test(table(data$education, data[[cluster_var]]))
+  chi_defaut <- chisq.test(table(data$defaut, data[[cluster_var]]))
+  
+  results[["chi_education"]] <- chi_education
+  results[["chi_defaut"]] <- chi_defaut
+  
+  return(results)
+}
+
+# Exécution des tests pour K=2, K=3 et K=5
+results_k2 <- run_statistical_tests(data_clean, "cluster_2")
+results_k3 <- run_statistical_tests(data_clean, "cluster_3")
+results_k5 <- run_statistical_tests(data_clean, "cluster_5")
+```
+
+
+## Analyse comparative approfondie
+
+```{r}
+comparative_analysis <- data.frame(
+  K = rep(c(2, 3, 5), each = length(variables_test)),
+  Variable = rep(variables_test, 3),
+  Kruskal_pvalue = c(
+    sapply(results_k2[grep("kruskal", names(results_k2))], function(x) x$p.value),
+    sapply(results_k3[grep("kruskal", names(results_k3))], function(x) x$p.value),
+    sapply(results_k5[grep("kruskal", names(results_k5))], function(x) x$p.value)
+  )
+)
+
+# Validation de la qualité des clusters
+cluster_quality <- data.frame(
+  K = c(2, 3, 5),
+  Within_SS = c(kmeans_2$tot.withinss, kmeans_3$tot.withinss, kmeans_5$tot.withinss),
+  Between_SS = c(kmeans_2$betweenss, kmeans_3$betweenss, kmeans_5$betweenss),
+  Total_SS = c(kmeans_2$totss, kmeans_3$totss, kmeans_5$totss),
+  Silhouette = c(mean(sil_2[,3]), mean(sil_3[,3]), mean(sil_5[,3]))
+)
+
+# Calcul des ratios de variance expliquée
+cluster_quality$Explained_Variance_Ratio <- cluster_quality$Between_SS / cluster_quality$Total_SS
+```
+
+## Comparaison des différentes configurations
+
+```{r}
+cluster_comparison <- data.frame(
+  K = c(2, 3, 5),
+  Clusters_Size_Range = c(
+    paste(range(table(data_clean$cluster_2)), collapse="-"),
+    paste(range(table(data_clean$cluster_3)), collapse="-"),
+    paste(range(table(data_clean$cluster_5)), collapse="-")
+  ),
+  Defaut_Rate_Range = c(
+    paste(range(round(cluster_profiles_2$Taux_defaut, 2)), collapse="-"),
+    paste(range(round(cluster_profiles_3$Taux_defaut, 2)), collapse="-"),
+    paste(range(round(cluster_profiles_5$Taux_defaut, 2)), collapse="-")
+  ),
+  Silhouette_Score = round(cluster_quality$Silhouette, 3),
+  Explained_Variance = round(cluster_quality$Explained_Variance_Ratio, 3)
+)
+
+# Affichage des résultats
+print("Analyse comparative des configurations de clustering:")
+print(cluster_comparison)
+
+print("\nTests statistiques significatifs (p < 0.05):")
+print(subset(comparative_analysis, Kruskal_pvalue < 0.05))
+
+print("\nQualité des clusters:")
+print(cluster_quality)
+```
+
+## Visualisation
+
+```{r}
+# Visualisation comparative des silhouettes
+ggplot(cluster_quality, aes(x = as.factor(K), y = Silhouette)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  labs(title = "Comparaison des scores de silhouette",
+       x = "Nombre de clusters (K)",
+       y = "Score de silhouette moyen") +
+  theme_minimal()
+
+# Visualisation de la variance expliquée
+ggplot(cluster_quality, aes(x = as.factor(K), y = Explained_Variance_Ratio)) +
+  geom_bar(stat = "identity", fill = "darkred") +
+  labs(title = "Ratio de variance expliquée par configuration",
+       x = "Nombre de clusters (K)",
+       y = "Ratio de variance expliquée") +
+  theme_minimal()
+```
+
 
 ### Apprentissage (Rpart et tree)
 
@@ -753,7 +1118,7 @@ roc.test(roc_list[[best_models[1]]], roc_list[[best_models[2]]])
 
 ```{r}
 # Chargement des donnees a predire dans un data frame 'data_PR'
-data_PR <- read.csv("C:/Users/maroi/Desktop/Projet R/projet_new.csv", sep=",", dec=".", header=T, stringsAsFactors = TRUE)
+data_PR <- read.csv("projet_new.csv", sep=",", dec=".", header=T, stringsAsFactors = TRUE)
 ```
 
 ```{r}
