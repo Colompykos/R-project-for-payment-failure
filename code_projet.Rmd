@@ -30,7 +30,7 @@ install.packages("rpart.plot")
 install.packages("C50")
 install.packages("tree")
 install.packages("DiagrammeR")
-
+install.packages("pROC")
 ```
 
 ```{r}
@@ -47,7 +47,9 @@ library(rpart)
 library(rpart.plot)
 library(tree)
 library(DiagrammeR)
+library(pROC)
 ```
+
 
 ```{r}
 # Definir le WD
@@ -441,6 +443,9 @@ results <- data.frame(
 # Afficher le tableau
 print(results)
 ```
+
+### Evaluation et choix du meilleure modèle
+
 ## Calcul des taux de succès
 
 ```{r}
@@ -472,4 +477,311 @@ cat("Taux pour test_tr4:", taux_tr4, "\n")
 
 ```
 
+## Matrice de confusion
+
+```{r}
+# Matrice de confusion pour 'tree1'
+mc_tree1 <- table(data_ET$defaut, test_tree1)
+print(mc_tree1)
+# Rappel
+mc_tree1[2,2]/(mc_tree1[2,2]+mc_tree1[2,1])
+# Spécificité
+mc_tree1[1,1]/(mc_tree1[1,1]+mc_tree1[1,2])
+# Précision 
+mc_tree1[2,2]/(mc_tree1[2,2]+mc_tree1[1,2])
+# Taux de Vrais Négatifs 
+mc_tree1[1,1]/(mc_tree1[1,1]+mc_tree1[2,1])
+
+# Matrice de confusion pour 'test_rp1'
+mc_rp1 <- table(data_ET$defaut, test_rp1)
+print(mc_rp1)
+# Rappel
+mc_rp1[2,2]/(mc_rp1[2,2]+mc_rp1[2,1])
+# Spécificité
+mc_rp1[1,1]/(mc_rp1[1,1]+mc_rp1[1,2])
+# Précision 
+mc_rp1[2,2]/(mc_rp1[2,2]+mc_rp1[1,2])
+# Taux de Vrais Négatifs 
+mc_rp1[1,1]/(mc_rp1[1,1]+mc_rp1[2,1])
+
+# Matrice de confusion pour 'test_rp2'
+mc_rp2 <- table(data_ET$defaut, test_rp2)
+print(mc_rp2)
+# Rappel
+mc_rp2[2,2]/(mc_rp2[2,2]+mc_rp2[2,1])
+# Spécificité
+mc_rp2[1,1]/(mc_rp2[1,1]+mc_rp2[1,2])
+# Précision 
+mc_rp2[2,2]/(mc_rp2[2,2]+mc_rp2[1,2])
+# Taux de Vrais Négatifs 
+mc_rp2[1,1]/(mc_rp2[1,1]+mc_rp2[2,1])
+
+# Matrice de confusion pour 'test_rp3'
+mc_rp3 <- table(data_ET$defaut, test_rp3)
+print(mc_rp3)
+# Rappel
+mc_rp3[2,2]/(mc_rp3[2,2]+mc_rp3[2,1])
+# Spécificité
+mc_rp3[1,1]/(mc_rp3[1,1]+mc_rp3[1,2])
+# Précision 
+mc_rp3[2,2]/(mc_rp3[2,2]+mc_rp3[1,2])
+# Taux de Vrais Négatifs 
+mc_rp3[1,1]/(mc_rp3[1,1]+mc_rp3[2,1])
+
+# Matrice de confusion pour 'test_rp4'
+mc_rp4 <- table(data_ET$defaut, test_rp4)
+print(mc_rp4)
+# Rappel
+mc_rp4[2,2]/(mc_rp4[2,2]+mc_rp4[2,1])
+# Spécificité
+mc_rp4[1,1]/(mc_rp4[1,1]+mc_rp4[1,2])
+# Précision 
+mc_rp4[2,2]/(mc_rp4[2,2]+mc_rp4[1,2])
+# Taux de Vrais Négatifs 
+mc_rp4[1,1]/(mc_rp4[1,1]+mc_rp4[2,1])
+
+# Matrice de confusion pour 'test_tree2'
+mc_tree2 <- table(data_ET$defaut, test_tree2)
+print(mc_tree2)
+# Rappel
+mc_tree2[2,2]/(mc_tree2[2,2]+mc_tree2[2,1])
+# Spécificité
+mc_tree2[1,1]/(mc_tree2[1,1]+mc_tree2[1,2])
+# Précision 
+mc_tree2[2,2]/(mc_tree2[2,2]+mc_tree2[1,2])
+# Taux de Vrais Négatifs 
+mc_tree2[1,1]/(mc_tree2[1,1]+mc_tree2[2,1])
+
+# Matrice de confusion pour 'test_tr1'
+mc_tr1 <- table(data_ET$defaut, test_tr1)
+print(mc_tr1)
+# Rappel
+mc_tr1[2,2]/(mc_tr1[2,2]+mc_tr1[2,1])
+# Spécificité
+mc_tr1[1,1]/(mc_tr1[1,1]+mc_tr1[1,2])
+# Précision 
+mc_tr1[2,2]/(mc_tr1[2,2]+mc_tr1[1,2])
+# Taux de Vrais Négatifs 
+mc_tr1[1,1]/(mc_tr1[1,1]+mc_tr1[2,1])
+
+# Matrice de confusion pour 'test_tr2'
+mc_tr2 <- table(data_ET$defaut, test_tr2)
+print(mc_tr2)
+# Rappel
+mc_tr2[2,2]/(mc_tr2[2,2]+mc_tr2[2,1])
+# Spécificité
+mc_tr2[1,1]/(mc_tr2[1,1]+mc_tr2[1,2])
+# Précision 
+mc_tr2[2,2]/(mc_tr2[2,2]+mc_tr2[1,2])
+# Taux de Vrais Négatifs 
+mc_tr2[1,1]/(mc_tr2[1,1]+mc_tr2[2,1])
+
+# Matrice de confusion pour 'test_tr3'
+mc_tr3 <- table(data_ET$defaut, test_tr3)
+print(mc_tr3)
+# Rappel
+mc_tr3[2,2]/(mc_tr3[2,2]+mc_tr3[2,1])
+# Spécificité
+mc_tr3[1,1]/(mc_tr3[1,1]+mc_tr3[1,2])
+# Précision 
+mc_tr3[2,2]/(mc_tr3[2,2]+mc_tr3[1,2])
+# Taux de Vrais Négatifs 
+mc_tr3[1,1]/(mc_tr3[1,1]+mc_tr3[2,1])
+
+# Matrice de confusion pour 'test_tr4'
+mc_tr4 <- table(data_ET$defaut, test_tr4)
+print(mc_tr4)
+# Rappel
+mc_tr4[2,2]/(mc_tr4[2,2]+mc_tr4[2,1])
+# Spécificité
+mc_tr4[1,1]/(mc_tr4[1,1]+mc_tr4[1,2])
+# Précision 
+mc_tr4[2,2]/(mc_tr4[2,2]+mc_tr4[1,2])
+# Taux de Vrais Négatifs 
+mc_tr4[1,1]/(mc_tr4[1,1]+mc_tr4[2,1])
+
+```
+
+```{r}
+# Création d'une fonction pour calculer les métriques
+calculate_metrics <- function(confusion_matrix) {
+  recall <- confusion_matrix[2,2] / (confusion_matrix[2,2] + confusion_matrix[2,1])
+  specificity <- confusion_matrix[1,1] / (confusion_matrix[1,1] + confusion_matrix[1,2])
+  precision <- confusion_matrix[2,2] / (confusion_matrix[2,2] + confusion_matrix[1,2])
+  tnr <- confusion_matrix[1,1] / (confusion_matrix[1,1] + confusion_matrix[2,1])
+  
+  return(c(recall, specificity, precision, tnr))
+}
+
+# Création du dataframe avec tous les résultats
+models_metrics <- data.frame(
+  Model = c("tree1", "rp1", "rp2", "rp3", "rp4", 
+            "tree2", "tr1", "tr2", "tr3", "tr4"),
+  Recall = NA,
+  Specificity = NA,
+  Precision = NA,
+  TNR = NA
+)
+
+# Liste des matrices de confusion
+confusion_matrices <- list(
+  mc_tree1, mc_rp1, mc_rp2, mc_rp3, mc_rp4,
+  mc_tree2, mc_tr1, mc_tr2, mc_tr3, mc_tr4
+)
+
+# Remplissage du dataframe avec les métriques
+for(i in 1:length(confusion_matrices)) {
+  metrics <- calculate_metrics(confusion_matrices[[i]])
+  models_metrics[i, 2:5] <- metrics
+}
+
+# Arrondir les valeurs à 3 décimales
+models_metrics[,2:5] <- round(models_metrics[,2:5], 3)
+
+# Ajout d'une colonne pour les vrais positifs et négatifs
+models_metrics$TP <- sapply(confusion_matrices, function(x) x[2,2])
+models_metrics$TN <- sapply(confusion_matrices, function(x) x[1,1])
+models_metrics$FP <- sapply(confusion_matrices, function(x) x[1,2])
+models_metrics$FN <- sapply(confusion_matrices, function(x) x[2,1])
+
+# Affichage du tableau avec un formatage amélioré
+library(knitr)
+kable(models_metrics, 
+      col.names = c("Modèle", "Rappel", "Spécificité", "Précision", "TNR", 
+                    "Vrais Pos.", "Vrais Nég.", "Faux Pos.", "Faux Nég."),
+      align = c('l', rep('r', 8)),
+      caption = "Comparaison des performances des modèles")
+
+# Si vous voulez sauvegarder les résultats dans un fichier CSV
+write.csv(models_metrics, "model_comparison_results.csv", row.names = FALSE)
+```
+
+##  Graphique ROC
+
+```{r}
+# Création des objets ROC pour chaque modèle
+roc_tree1 <- roc(data_ET$defaut, as.numeric(test_tree1))
+roc_rp1 <- roc(data_ET$defaut, as.numeric(test_rp1))
+roc_rp2 <- roc(data_ET$defaut, as.numeric(test_rp2))
+roc_rp3 <- roc(data_ET$defaut, as.numeric(test_rp3))
+roc_rp4 <- roc(data_ET$defaut, as.numeric(test_rp4))
+roc_tree2 <- roc(data_ET$defaut, as.numeric(test_tree2))
+roc_tr1 <- roc(data_ET$defaut, as.numeric(test_tr1))
+roc_tr2 <- roc(data_ET$defaut, as.numeric(test_tr2))
+roc_tr3 <- roc(data_ET$defaut, as.numeric(test_tr3))
+roc_tr4 <- roc(data_ET$defaut, as.numeric(test_tr4))
+
+# Création d'une liste des objets ROC avec leurs noms
+roc_list <- list(
+  tree1 = roc_tree1,
+  rp1 = roc_rp1,
+  rp2 = roc_rp2,
+  rp3 = roc_rp3,
+  rp4 = roc_rp4,
+  tree2 = roc_tree2,
+  tr1 = roc_tr1,
+  tr2 = roc_tr2,
+  tr3 = roc_tr3,
+  tr4 = roc_tr4
+)
+
+# Création du dataframe pour ggplot
+roc_data <- data.frame()
+for(model_name in names(roc_list)) {
+  roc_obj <- roc_list[[model_name]]
+  temp_data <- data.frame(
+    FPR = 1 - roc_obj$specificities,
+    TPR = roc_obj$sensitivities,
+    Model = model_name,
+    AUC = sprintf("%.3f", auc(roc_obj))
+  )
+  roc_data <- rbind(roc_data, temp_data)
+}
+
+# Création du graphique avec ggplot2
+roc_plot <- ggplot(roc_data, aes(x = FPR, y = TPR, color = Model)) +
+  geom_line(size = 1) +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "gray") +
+  labs(
+    title = "Courbes ROC pour tous les modèles",
+    x = "Taux de Faux Positifs (1 - Spécificité)",
+    y = "Taux de Vrais Positifs (Sensibilité)",
+    color = "Modèle"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "right",
+    plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
+    axis.text = element_text(size = 10),
+    axis.title = element_text(size = 12)
+  )
+
+# Ajout des valeurs AUC dans la légende
+roc_plot <- roc_plot +
+  scale_color_discrete(
+    labels = paste0(
+      names(roc_list), 
+      " (AUC = ", 
+      sapply(roc_list, function(x) sprintf("%.3f", auc(x))),
+      ")"
+    )
+  )
+
+# Affichage du graphique
+print(roc_plot)
+
+# Création d'un tableau des AUC
+auc_table <- data.frame(
+  Model = names(roc_list),
+  AUC = sapply(roc_list, function(x) round(auc(x), 3))
+)
+
+# Tri du tableau par AUC décroissant
+auc_table <- auc_table[order(-auc_table$AUC),]
+
+# Affichage du tableau des AUC
+print(knitr::kable(auc_table, 
+                   col.names = c("Modèle", "AUC"),
+                   caption = "Valeurs AUC pour chaque modèle"))
+
+# Test statistique pour comparer les AUC
+# On peut comparer les deux meilleurs modèles par exemple
+best_models <- auc_table$Model[1:2]
+roc.test(roc_list[[best_models[1]]], roc_list[[best_models[2]]])
+```
+### PREDICTIONS DU CLASSIFIEUR SELECTIONNE
+
+```{r}
+# Chargement des donnees a predire dans un data frame 'data_PR'
+data_PR <- read.csv("C:/Users/maroi/Desktop/Projet R/projet_new.csv", sep=",", dec=".", header=T, stringsAsFactors = TRUE)
+```
+
+```{r}
+# Application de l'arbre 'tree1' a l'ensemble de prospects 'data_PR' 
+
+# Définir les niveaux dans l'ordre attendu pour la variable education
+levels_education <- c("Niveau bac", "Bac+2", "Bac+3", "Bac+4", "Bac+5 et plus")
+
+# Convertir education en facteur ordonné avec les mêmes niveaux
+data_PR$education <- factor(data_PR$education, levels = levels_education, ordered = TRUE)
+
+# Convertir categorie en facteur simple
+data_PR$categorie <- as.factor(data_PR$categorie)
+
+# Prédiction
+class_tree1 <- predict(tree1, data_PR, type = "class")
+
+# Affichqge du tableau des prédictions
+table(class_tree1)
+
+```
+```{r}
+data_PR$Prediction <- class_tree1
+View(data_PR)
+```
+
+
+```{r}
+write.table(data_PR, file='resultats.csv', sep="\t", dec=".", row.names = F)
+```
 
