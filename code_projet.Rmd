@@ -1,0 +1,475 @@
+---
+title: "R Poject"
+author: "Salah Edine ABOULKACIM - Marouane TAKI EDINE"
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
+---
+
+```{r}
+options(repos = c(CRAN = "https://cran.rstudio.com/"))
+```
+
+### Analyse exploratoire des données
+
+## Chargement des bibliothèques et des données
+
+```{r}
+# Chargement des bibliothèques nécessaires
+
+install.packages("tidyverse")
+install.packages("corrplot")
+install.packages("ggplot2")
+install.packages("gridExtra")
+install.packages("knitr")
+install.packages("DT")
+install.packages("mice")
+install.packages("rpart")
+install.packages("rpart.plot")
+install.packages("C50")
+install.packages("tree")
+install.packages("DiagrammeR")
+
+```
+
+```{r}
+# Chargement des bibliothèques nécessaires
+library(tidyverse)
+library(corrplot)
+library(ggplot2)
+library(gridExtra)
+library(knitr)
+library(DT)
+library(mice)
+library(C50)
+library(rpart)
+library(rpart.plot)
+library(tree)
+library(DiagrammeR)
+```
+
+```{r}
+# Definir le WD
+setwd("C:/Users/maroi/Desktop/Projet R")
+```
+
+```{r}
+getwd()
+```
+
+```{r}
+# Chargement des donnees
+data<- read.csv("C:/Users/maroi/Desktop/Projet R/projet.csv")
+```
+
+## Structure des données
+
+```{r}
+# Aperçu des données
+str(data)
+```
+
+```{r}
+# Aperçu des données
+summary(data)
+```
+
+## Prétraitement initial
+
+```{r}
+# Conversion des variables en facteurs
+data$education <- factor(data$education, 
+                        levels = c("Niveau bac", "Bac+2", "Bac+3", "Bac+4", "Bac+5 et plus"),
+                        ordered = TRUE)
+
+data$defaut <- factor(data$defaut, 
+                     levels = c("Non", "Oui"))
+
+data$categorie <- factor(data$categorie)
+```
+
+```{r}
+# Conversion des valeurs 999 en NA pour age et adresse
+data$age[data$age == 999] <- NA
+data$adresse[data$adresse == 999] <- NA
+```
+
+## Structure des données après prétraitement
+
+```{r}
+# Aperçu des données
+str(data)
+```
+
+```{r}
+# Aperçu des données
+summary(data)
+```
+
+## Analyse des valeurs manquantes
+
+```{r}
+# Vérification des valeurs manquantes
+colSums(is.na(data))
+```
+
+```{r}
+# Calcul des valeurs manquantes
+na_counts <- colSums(is.na(data))
+na_percentages <- round(100 * na_counts / nrow(data), 2)
+
+# Création d'un dataframe pour l'affichage
+missing_data <- data.frame(
+  Variable = names(na_counts),
+  Compte_NA = na_counts,
+  Pourcentage_NA = na_percentages
+)
+
+# Affichage avec DT
+datatable(missing_data)
+```
+
+## Analyse du déséquilibre des classes
+
+```{r}
+# Distribution de la variable cible
+table(data$defaut)
+```
+
+```{r}
+# Distribution de la variable cible
+prop.table(table(data$defaut))
+```
+
+```{r}
+# Distribution de la variable cible
+class_dist <- table(data$defaut)
+class_prop <- prop.table(class_dist) * 100
+
+# Création du graphique
+ggplot(data, aes(x = defaut)) +
+  geom_bar(fill = "skyblue") +
+  labs(title = "Distribution des défauts de paiement",
+       x = "Défaut",
+       y = "Nombre de clients") +
+  theme_minimal()
+
+# Affichage des proportions
+kable(data.frame(
+  Classe = names(class_dist),
+  Compte = as.vector(class_dist),
+  Pourcentage = round(as.vector(class_prop), 2)
+))
+```
+
+## Analyse des valeurs aberrantes
+
+```{r}
+numeric_vars <- c("age", "emploi", "adresse", "revenus", "debcred", "debcarte", "autres")
+outliers_summary <- list()
+for(var in numeric_vars) {
+    Q1 <- quantile(data[[var]], 0.25, na.rm = TRUE)
+    Q3 <- quantile(data[[var]], 0.75, na.rm = TRUE)
+    IQR <- Q3 - Q1
+    lower_bound <- Q1 - 1.5 * IQR
+    upper_bound <- Q3 + 1.5 * IQR
+    outliers <- sum(data[[var]] < lower_bound | data[[var]] > upper_bound, na.rm = TRUE)
+    outliers_pct <- (outliers/sum(!is.na(data[[var]]))) * 100
+    outliers_summary[[var]] <- c(count = outliers, percentage = outliers_pct)
+}
+print("\nPourcentage de valeurs aberrantes par variable:")
+outliers_df <- do.call(rbind, outliers_summary)
+print(outliers_df)
+```
+
+## Analyse bivariée avec la variable cible
+
+```{r}
+# Pour les variables numériques
+bivariate_stats <- list()
+for(var in numeric_vars) {
+    stats_by_class <- aggregate(data[[var]], by=list(defaut=data$defaut), 
+                              FUN=function(x) c(mean=mean(x, na.rm=TRUE), 
+                                              median=median(x, na.rm=TRUE)))
+    bivariate_stats[[var]] <- stats_by_class
+}
+print("Statistiques par classe de défaut:")
+print(bivariate_stats)
+```
+
+```{r}
+# Pour les variables catégorielles
+cat_vars <- c("education", "categorie")
+for(var in cat_vars) {
+    cont_table <- table(data[[var]], data$defaut)
+    print(paste("Table de contingence pour", var))
+    print(cont_table)
+    print(paste("Test du Chi-2 pour", var))
+    print(chisq.test(cont_table))
+}
+```
+
+```{r}
+# Corrélations
+correlation_matrix <- cor(data[numeric_vars], use = "complete.obs")
+print("Matrice de corrélation:")
+print(round(correlation_matrix, 3))
+```
+
+## Visualisations
+
+```{r}
+
+# Effectuer une imputation multivariée
+imputed_data <- mice(data, method = 'pmm', m = 5)
+
+# Choisir l'un des ensembles de données imputées (par exemple, le premier)
+data_clean <- complete(imputed_data, 1)
+
+# Distribution de la variable cible
+ggplot(data_clean, aes(x = defaut, fill = defaut)) +
+    geom_bar() +
+    labs(title = "Distribution des défauts de paiement") +
+    theme_minimal()
+
+# Boxplots des variables numériques par défaut
+for(var in numeric_vars) {
+    print(
+        ggplot(data_clean, aes_string(x = "defaut", y = var)) +
+            geom_boxplot() +
+            labs(title = paste("Distribution de", var, "par classe")) +
+            theme_minimal()
+    )
+}
+
+# Visualisation des relations catégorielles
+for(var in cat_vars) {
+    print(
+        ggplot(data_clean, aes_string(x = var, fill = "defaut")) +
+            geom_bar(position = "fill") +
+            labs(title = paste("Proportion de défauts par", var)) +
+            theme_minimal() +
+            theme(axis.text.x = element_text(angle = 45, hjust = 1))
+    )
+}
+# Tracer avec les données imputées
+ggplot(data_clean, aes(x = age, y = revenus, color = defaut)) +
+    geom_point() +
+    labs(title = "Nuage de Points de Age et Revenus",
+         x = "Valeur de Age",
+         y = "Valeur de Revenus") +
+    theme_minimal() +
+    scale_color_manual(values = c("Non" = "red", "Oui" = "black"))
+```
+
+### Apprentissage (Rpart et tree)
+
+## Creation des ensembles d'apprentissage et de test
+
+```{r}
+# Ensemble d'apprentissage de 80% du data
+data_EA<- data[1:4800,]
+
+# Ensemble de test de 20% du data
+data_ET<- data[4801:6000,]
+
+```
+
+```{r}
+# Suppression de la variable client (variable unique)
+data_EA <- subset(data_EA, select=-client)
+```
+
+## APPRENTISSAGE ARBRE DE DECISION 'rpart' sans paramétrage
+
+```{r}
+# Apprentissage arbre
+tree1 <- rpart(defaut~., data_EA)
+
+# Affichage graphique : tracage des arcs par la fonction plot.rpart() 
+plot(tree1)
+
+# Ajout du texte au graphique par la fonction text.rpart()
+text(tree1, pretty = 0)
+
+# affichage avec la librairie rpart.plot
+rpart.plot(tree1, cex=0.6)
+```
+
+## APPRENTISSAGE ARBRE DE DECISION 'rpart' avec paramétrage
+
+```{r}
+# Selection d'attribut par Coefficient de Gini et effectif minimal d'un noeud de 10
+tree_rp1 <- rpart(defaut~., data_EA, parms = list(split = "gini"), control = rpart.control(minbucket = 10))
+plot(tree_rp1)
+text(tree_rp1, pretty = 0)
+
+# Selection d'attribut par Coefficient de Gini et effectif minimal d'un noeud de 5
+tree_rp2 <- rpart(defaut~., data_EA, parms = list(split = "gini"), control = rpart.control(minbucket = 5))
+plot(tree_rp2)
+text(tree_rp2, pretty = 0)
+
+# Selection d'attribut par Information Gain et effectif minimal d'un noeud de 10
+tree_rp3 <- rpart(defaut~., data_EA, parms = list(split = "information"), control = rpart.control(minbucket = 10))
+plot(tree_rp3)
+text(tree_rp3, pretty = 0)
+
+# Selection d'attribut par Information Gain et effectif minimal d'un noeud de 5
+tree_rp4 <- rpart(defaut~., data_EA, parms = list(split = "information"), control = rpart.control(minbucket = 5))
+plot(tree_rp4)
+text(tree_rp4, pretty = 0)
+
+# Affichage des arbres rpart() avec rpart.plot() pour plus de lisibilité
+rpart.plot(tree_rp1)
+rpart.plot(tree_rp2, cex=0.7)
+rpart.plot(tree_rp3)
+rpart.plot(tree_rp4, cex=0.7)
+```
+
+## APPRENTISSAGE ARBRE DE DECISION 'tree' sans paramétrage
+
+```{r}
+# Apprentissage arbre
+tree2 <- tree(defaut~., data=data_EA)
+
+# Affichage graphique : tracage des arcs par la fonction plot.tree() 
+plot(tree2)
+# Ajout du texte au graphique par la fonction text.tree()
+text(tree2, pretty=0)
+```
+
+## APPRENTISSAGE ARBRE DE DECISION 'tree' avec paramétrage
+
+```{r}
+# Apprentissage 1er parametrage pour tree()
+tree_tr1 <- tree(defaut~., data_EA, split = "deviance", control = tree.control(nrow(data_EA), mincut = 10))
+plot(tree_tr1)
+text(tree_tr1, pretty = 0)
+
+# Apprentissage 2nd parametrage pour tree()
+tree_tr2 <- tree(defaut~., data_EA, split = "deviance", control = tree.control(nrow(data_EA), mincut = 5))
+plot(tree_tr2)
+text(tree_tr2, pretty = 0)
+
+# Apprentissage 3eme parametrage pour tree() / overlapping text, making it unreadable. The tree has too many splits and the nodes are very close to each other
+tree_tr3 <- tree(defaut~., data_EA, split = "gini", control = tree.control(nrow(data_EA), mincut = 10))
+plot(tree_tr3)
+text(tree_tr3, pretty = 0)
+
+# Apprentissage 4eme parametrage pour tree()
+tree_tr4 <- tree(defaut~., data_EA, split = "gini", control = tree.control(nrow(data_EA), mincut = 5))
+plot(tree_tr4)
+text(tree_tr4, pretty = 0)
+
+```
+
+### TEST DES DES CLASSIFIEURS (Rpart et tree)
+
+## Test des arbes
+
+```{r}
+##  Rpart cases
+# Sans paramétrage
+
+# Application de l'arbre 'tree1' a l'ensemble de test 'data_ET'
+test_tree1 <- predict(tree1, data_ET, type="class")
+
+# Avec paramétrage
+# Application de l'arbre 'tree_rp1' a l'ensemble de test 'data_ET' 
+test_rp1 <- predict(tree_rp1, data_ET, type="class")
+# Application de l'arbre 'tree_rp2' a l'ensemble de test 'data_ET'
+test_rp2 <- predict(tree_rp2, data_ET, type="class")
+# Application de l'arbre 'tree_rp3' a l'ensemble de test 'data_ET' 
+test_rp3 <- predict(tree_rp3, data_ET, type="class")
+# Application de l'arbre 'tree_rp4' a l'ensemble de test 'data_ET'
+test_rp4 <- predict(tree_rp4, data_ET, type="class")
+```
+
+```{r}
+## tree cases
+
+# Sans paramétrage
+# Application de l'arbre 'tree2' a l'ensemble de test 'data_ET'
+test_tree2 <- predict(tree2, data_ET, type="class")
+
+# Avec paramétrage
+# Test  1
+test_tr1 <- predict(tree_tr1, data_ET, type="class")
+# Test  2
+test_tr2 <- predict(tree_tr2, data_ET, type="class")
+# Test  3
+test_tr3 <- predict(tree_tr3, data_ET, type="class")
+# Test  4
+test_tr4 <- predict(tree_tr4, data_ET, type="class")
+```
+
+```{r}
+# Comparaison des repartitions des predictions
+table(test_tree1)
+table(test_rp1)
+table(test_rp2)
+table(test_rp3)
+table(test_rp4)
+table(test_tree2)
+table(test_tr1)
+table(test_tr2)
+table(test_tr3)
+table(test_tr4)
+```
+
+```{r}
+# Créer des tables pour chaque ensemble de prédictions
+table_tree1 <- table(test_tree1)
+table_rp1 <- table(test_rp1)
+table_rp2 <- table(test_rp2)
+table_rp3 <- table(test_rp3)
+table_rp4 <- table(test_rp4)
+table_tree2 <- table(test_tree2)
+table_tr1 <- table(test_tr1)
+table_tr2 <- table(test_tr2)
+table_tr3 <- table(test_tr3)
+table_tr4 <- table(test_tr4)
+
+# Combiner les résultats dans un dataframe
+results <- data.frame(
+  Test = c("test_tree1", "test_rp1", "test_rp2", "test_rp3", "test_rp4", "test_tree2", "test_tr1", "test_tr2", "test_tr3", "test_tr4"),
+  Non = c(table_tree1["Non"], table_rp1["Non"], table_rp2["Non"], table_rp3["Non"], table_rp4["Non"], table_tree2["Non"], table_tr1["Non"], table_tr2["Non"], table_tr3["Non"], table_tr4["Non"]),
+  Oui = c(table_tree1["Oui"], table_rp1["Oui"], table_rp2["Oui"], table_rp3["Oui"], table_rp4["Oui"], table_tree2["Oui"], table_tr1["Oui"], table_tr2["Oui"], table_tr3["Oui"], table_tr4["Oui"])
+)
+
+# Afficher le tableau
+print(results)
+```
+## Calcul des taux de succès
+
+```{r}
+# Rpart cases
+taux_tree1 <- nrow(data_ET[data_ET$defaut == test_tree1, ]) / nrow(data_ET)
+taux_rp1 <- nrow(data_ET[data_ET$defaut == test_rp1, ]) / nrow(data_ET)
+taux_rp2 <- nrow(data_ET[data_ET$defaut == test_rp2, ]) / nrow(data_ET)
+taux_rp3 <- nrow(data_ET[data_ET$defaut == test_rp3, ]) / nrow(data_ET)
+taux_rp4 <- nrow(data_ET[data_ET$defaut == test_rp4, ]) / nrow(data_ET)
+
+cat("Taux pour test_tree1:", taux_tree1, "\n")
+cat("Taux pour test_rp1:", taux_rp1, "\n")
+cat("Taux pour test_rp2:", taux_rp2, "\n")
+cat("Taux pour test_rp3:", taux_rp3, "\n")
+cat("Taux pour test_rp4:", taux_rp4, "\n")
+
+# Tree cases
+taux_tree2 <- nrow(data_ET[data_ET$defaut == test_tree2, ]) / nrow(data_ET)
+taux_tr1 <- nrow(data_ET[data_ET$defaut == test_tr1, ]) / nrow(data_ET)
+taux_tr2 <- nrow(data_ET[data_ET$defaut == test_tr2, ]) / nrow(data_ET)
+taux_tr3 <- nrow(data_ET[data_ET$defaut == test_tr3, ]) / nrow(data_ET)
+taux_tr4 <- nrow(data_ET[data_ET$defaut == test_tr4, ]) / nrow(data_ET)
+
+cat("Taux pour test_tree2:", taux_tree2, "\n")
+cat("Taux pour test_tr1:", taux_tr1, "\n")
+cat("Taux pour test_tr2:", taux_tr2, "\n")
+cat("Taux pour test_tr3:", taux_tr3, "\n")
+cat("Taux pour test_tr4:", taux_tr4, "\n")
+
+```
+
+
