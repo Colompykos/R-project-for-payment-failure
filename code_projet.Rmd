@@ -1,6 +1,6 @@
 ---
 title: "R Poject"
-author: "Salah Edine ABOULKACIM - Marouane TAKI EDINE"
+author: "Salah Eddine ABOULKACIM - Marouane TAKI EDINE"
 output:
   html_document:
     df_print: paged
@@ -375,8 +375,27 @@ for(var in variables_num) {
 
 # Calcul de la silhouette pour K=2
 sil_2 <- silhouette(kmeans_2$cluster, dist(data_scaled))
-plot(sil_2, main = "Silhouette plot (K=2)")
-print(paste("Silhouette moyenne (K=2):", mean(sil_2[,3])))
+
+# Convertir en dataframe pour ggplot
+sil_data_2 <- data.frame(
+  cluster = factor(sil_2[, 1]),
+  silhouette_width = sil_2[, 3],
+  observation = 1:nrow(data_scaled)
+)
+
+# Visualisation avec ggplot
+ggplot(sil_data_2, aes(x = observation, y = silhouette_width, fill = cluster)) +
+  geom_bar(stat = "identity", width = 1) +
+  scale_fill_brewer(palette = "Set2") +
+  labs(
+    title = "Silhouette Plot (K=2)",
+    x = "Observation",
+    y = "Silhouette Width",
+    fill = "Cluster"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_blank())
+
 
 ```
 
@@ -445,8 +464,27 @@ for(var in variables_num) {
 
 # Calcul de la silhouette pour K=3
 sil_3 <- silhouette(kmeans_3$cluster, dist(data_scaled))
-plot(sil_3, main = "Silhouette plot (K=3)")
-print(paste("Silhouette moyenne (K=3):", mean(sil_3[,3])))
+
+# Convertir en dataframe pour ggplot
+sil_data_3 <- data.frame(
+  cluster = factor(sil_3[, 1]),
+  silhouette_width = sil_3[, 3],
+  observation = 1:nrow(data_scaled)
+)
+
+# Visualisation avec ggplot
+ggplot(sil_data_3, aes(x = observation, y = silhouette_width, fill = cluster)) +
+  geom_bar(stat = "identity", width = 1) +
+  scale_fill_brewer(palette = "Set3") +
+  labs(
+    title = "Silhouette Plot (K=3)",
+    x = "Observation",
+    y = "Silhouette Width",
+    fill = "Cluster"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_blank())
+
 ```
 
 
@@ -513,10 +551,28 @@ for(var in variables_num) {
   print(summary(aov(as.formula(paste(var, "~ cluster_5")), data = data_clean)))
 }
 
-# Calcul de la silhouette pour K=5
+# Calcul de la silhouette
 sil_5 <- silhouette(kmeans_5$cluster, dist(data_scaled))
-plot(sil_5, main = "Silhouette plot (K=5)")
-print(paste("Silhouette moyenne (K=5):", mean(sil_5[,3])))
+
+# Convertir en dataframe pour ggplot
+sil_data <- data.frame(
+  cluster = factor(sil_5[, 1]),
+  silhouette_width = sil_5[, 3],
+  observation = 1:nrow(data_scaled)
+)
+
+# Visualisation avec ggplot
+ggplot(sil_data, aes(x = observation, y = silhouette_width, fill = cluster)) +
+  geom_bar(stat = "identity", width = 1) +
+  scale_fill_brewer(palette = "Set3") +
+  labs(
+    title = "Silhouette Plot (K=5)",
+    x = "Observation",
+    y = "Silhouette Width",
+    fill = "Cluster"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_blank())
 ```
 
 ## Évaluation statistique des différences entre clusters
