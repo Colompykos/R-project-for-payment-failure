@@ -604,8 +604,11 @@ run_statistical_tests <- function(data, cluster_var) {
 
 # Exécution des tests pour K=2, K=3 et K=5
 results_k2 <- run_statistical_tests(data_clean, "cluster_2")
+print(results_k2)
 results_k3 <- run_statistical_tests(data_clean, "cluster_3")
+print(results_k3)
 results_k5 <- run_statistical_tests(data_clean, "cluster_5")
+print(results_k5)
 ```
 
 
