@@ -1168,10 +1168,20 @@ print(knitr::kable(auc_table,
                    col.names = c("Modèle", "AUC"),
                    caption = "Valeurs AUC pour chaque modèle"))
 
-# Test statistique pour comparer les AUC
-# On peut comparer les deux meilleurs modèles par exemple
-best_models <- auc_table$Model[1:2]
-roc.test(roc_list[[best_models[1]]], roc_list[[best_models[2]]])
+# Test 1 : Comparaison entre tree2 (0.665) et tr3 (0.663)
+test1 <- roc.test(roc_list[["tree2"]], roc_list[["tr3"]])
+print("Test 1 : tree2 vs tr3")
+print(test1)
+
+# Test 2 : Comparaison entre tr3 (0.663) et tr4 (0.656)
+test2 <- roc.test(roc_list[["tr3"]], roc_list[["tr4"]])
+print("Test 2 : tr3 vs tr4")
+print(test2)
+
+# Test 3 : Comparaison entre tr4 (0.656) et rp1 (0.650)
+test3 <- roc.test(roc_list[["tr4"]], roc_list[["rp1"]])
+print("Test 3 : tr4 vs rp1")
+print(test3)
 ```
 ### PREDICTIONS DU CLASSIFIEUR SELECTIONNE
 
@@ -1206,6 +1216,6 @@ View(data_PR)
 
 
 ```{r}
-write.table(data_PR, file='resultats.csv', sep="\t", dec=".", row.names = F)
+write.table(data_PR, file='Salah_Eddine_ABOULKACIM-Marouane_TAKI_EDINE.csv', sep="\t", dec=".", row.names = F)
 ```
 
